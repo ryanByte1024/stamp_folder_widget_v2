@@ -1,0 +1,8 @@
+/.dart_tool/
+/.idea/
+/build/
+/web/
+/参考视频/
+*.iml
+pubspec.lock
+/docs/

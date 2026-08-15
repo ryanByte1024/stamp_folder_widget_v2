@@ -1,0 +1,20 @@
+name: stamp_folder_widget_example
+description: Example app for the stamp_folder_widget_v2 package.
+publish_to: 'none'
+
+environment:
+  sdk: ^3.11.4
+
+dependencies:
+  flutter:
+    sdk: flutter
+  stamp_folder_widget_v2:
+    path: ../
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^6.0.0
+
+flutter:
+  uses-material-design: true
