@@ -123,6 +123,10 @@ class DemoPage extends StatelessWidget {
 - `backPanelColors`: gradient colors for the rear panel
 - `frontEdgeGlowColor`: glow color around the front pocket edge
 - `backEdgeGlowColor`: glow color around the rear panel edge
+- `frontBorderColor`: outline color of the front pocket; alpha controls opacity
+- `frontBorderWidth`: outline width of the front pocket; `0` hides it
+- `backBorderColor`: outline color of the rear panel; alpha controls opacity
+- `backBorderWidth`: outline width of the rear panel; `0` hides it
 - `title`: main label on the front pocket
 - `subtitle`: secondary label on the front pocket
 - `labelColor`: text and leaf decoration color
@@ -145,7 +149,8 @@ class DemoPage extends StatelessWidget {
 
 ### Stamp Configuration
 
-Pass exactly 3 `StampFolderStampData` items to `stamps`.
+Pass 0 to 3 `StampFolderStampData` items to `stamps`. Replace the list and
+rebuild the widget to dynamically add or remove stamp images.
 
 Each `StampFolderStampData` supports:
 
@@ -168,7 +173,7 @@ Each `StampFolderStampData` supports:
 
 ## Notes
 
-- The widget expects exactly 3 stamp items when `stamps` is provided.
+- The widget supports 0 to 3 stamp items and rejects more than 3.
 - If fewer than 3 panel colors are passed, the package automatically resolves them into a usable gradient set.
 - The package no longer bundles a built-in stamp image. Provide your own image source from the host app.
 - The example app in [`example/lib/main.dart`](./example/lib/main.dart) shows a complete package usage setup.

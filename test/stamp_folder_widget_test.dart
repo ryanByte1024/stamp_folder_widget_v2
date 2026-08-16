@@ -128,16 +128,87 @@ void main() {
     expect(states, [true, false]);
   });
 
-  testWidgets('requires exactly three cards', (WidgetTester tester) async {
-    final stamp = StampFolderWidget.buildDefaultStamps(
+  testWidgets('supports dynamically adding and removing up to three cards', (
+    WidgetTester tester,
+  ) async {
+    final stamps = StampFolderWidget.buildDefaultStamps(
       imageProvider: MemoryImage(_transparentImage),
-    ).first;
+    );
+    final visibleCount = ValueNotifier<int>(0);
 
     await tester.pumpWidget(
-      MaterialApp(home: StampFolderWidget(stamps: [stamp, stamp])),
+      MaterialApp(
+        home: Scaffold(
+          body: ValueListenableBuilder<int>(
+            valueListenable: visibleCount,
+            builder: (context, count, _) => StampFolderWidget(
+              stamps: stamps.take(count).toList(growable: false),
+            ),
+          ),
+        ),
+      ),
+    );
+
+    expect(find.byType(StampCard), findsNothing);
+
+    visibleCount.value = 1;
+    await tester.pump();
+    expect(find.byType(StampCard), findsOneWidget);
+
+    visibleCount.value = 3;
+    await tester.pump();
+    expect(find.byType(StampCard), findsNWidgets(3));
+
+    visibleCount.value = 2;
+    await tester.pump();
+    expect(find.byType(StampCard), findsNWidgets(2));
+
+    visibleCount.value = 0;
+    await tester.pump();
+    expect(find.byType(StampCard), findsNothing);
+
+    await tester.pumpWidget(const SizedBox());
+    visibleCount.dispose();
+  });
+
+  testWidgets('rejects more than three cards', (WidgetTester tester) async {
+    final stamps = StampFolderWidget.buildDefaultStamps(
+      imageProvider: MemoryImage(_transparentImage),
+    );
+
+    await tester.pumpWidget(
+      MaterialApp(home: StampFolderWidget(stamps: [...stamps, stamps.first])),
     );
 
     expect(tester.takeException(), isA<FlutterError>());
+  });
+
+  testWidgets('supports configurable folder edge borders', (
+    WidgetTester tester,
+  ) async {
+    const frontBorderColor = Color(0xFFEF8354);
+    const backBorderColor = Color(0xFF2D3047);
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StampFolderWidget(
+          frontBorderColor: frontBorderColor,
+          frontBorderWidth: 4,
+          backBorderColor: backBorderColor,
+          backBorderWidth: 3,
+        ),
+      ),
+    );
+
+    final frontPocket = tester.widget<FrontPocket>(find.byType(FrontPocket));
+    final backPanel = tester.widget<FolderBackPanel>(
+      find.byType(FolderBackPanel),
+    );
+
+    expect(frontPocket.borderColor, frontBorderColor);
+    expect(frontPocket.borderWidth, 4);
+    expect(backPanel.borderColor, backBorderColor);
+    expect(backPanel.borderWidth, 3);
   });
 
   test('copyWith preserves layout and updates card appearance', () {

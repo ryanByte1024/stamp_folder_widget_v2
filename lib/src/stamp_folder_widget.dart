@@ -7,6 +7,8 @@ const Size _referenceSize = Size(520, 582);
 const double _referenceLiftFactor = 32 / 582;
 
 class StampFolderWidget extends StatefulWidget {
+  static const int maxStampCount = 3;
+
   const StampFolderWidget({
     super.key,
     this.width,
@@ -28,7 +30,11 @@ class StampFolderWidget extends StatefulWidget {
     ],
     this.frontEdgeGlowColor = const Color(0xFFFFFFFF),
     this.backEdgeGlowColor = const Color(0xFFFFFFFF),
-    required this.stamps,
+    this.frontBorderColor = const Color(0xB8FFFFFF),
+    this.frontBorderWidth = 1,
+    this.backBorderColor = const Color(0xB3FFFFFF),
+    this.backBorderWidth = 1,
+    this.stamps = const [],
     this.showLeafDecoration = false,
     this.showStampBorders = true,
     this.enableTapAnimation = true,
@@ -89,6 +95,18 @@ class StampFolderWidget extends StatefulWidget {
   final List<Color> backPanelColors;
   final Color frontEdgeGlowColor;
   final Color backEdgeGlowColor;
+
+  /// Color of the front pocket outline. Set its alpha to control opacity.
+  final Color frontBorderColor;
+  /// Stroke width of the front pocket outline. Set to 0 to hide it.
+  final double frontBorderWidth;
+  /// Color of the rear panel outline. Set its alpha to control opacity.
+  final Color backBorderColor;
+  /// Stroke width of the rear panel outline. Set to 0 to hide it.
+  final double backBorderWidth;
+
+  /// Stamp images to render. The parent can replace this list to dynamically
+  /// add or remove images; at most [maxStampCount] images are supported.
   final List<StampFolderStampData> stamps;
   final bool showLeafDecoration;
   final bool showStampBorders;
@@ -227,9 +245,10 @@ class _StampFolderWidgetState extends State<StampFolderWidget>
 
   @override
   Widget build(BuildContext context) {
-    if (widget.stamps.length != 3) {
+    if (widget.stamps.length > StampFolderWidget.maxStampCount) {
       throw FlutterError(
-        'StampFolderWidget requires exactly three stamps, but received '
+        'StampFolderWidget supports at most '
+        '${StampFolderWidget.maxStampCount} stamps, but received '
         '${widget.stamps.length}.',
       );
     }
@@ -377,16 +396,22 @@ class _StampFolderWidgetState extends State<StampFolderWidget>
           ),
           Positioned.fromRect(
             rect: backGeometry.rect,
-            child: FolderBackPanel(colors: backColors, edgeGlowColor: backGlow),
+            child: FolderBackPanel(
+              colors: backColors,
+              edgeGlowColor: backGlow,
+              borderColor: widget.backBorderColor,
+              borderWidth: widget.backBorderWidth,
+            ),
           ),
           for (final index in const [2, 0, 1])
-            _buildAnimatedStamp(
-              stamp: widget.stamps[index],
-              index: index,
-              engageProgress: engageProgress,
-              cardProgress: cardProgress,
-              extraLift: extraLift,
-            ),
+            if (index < widget.stamps.length)
+              _buildAnimatedStamp(
+                stamp: widget.stamps[index],
+                index: index,
+                engageProgress: engageProgress,
+                cardProgress: cardProgress,
+                extraLift: extraLift,
+              ),
           Positioned.fromRect(
             rect: frontGeometry.rect,
             child: _PerspectiveFrontPocket(
@@ -398,6 +423,8 @@ class _StampFolderWidgetState extends State<StampFolderWidget>
                 labelColor: widget.labelColor,
                 showLeafDecoration: widget.showLeafDecoration,
                 edgeGlowColor: frontGlow,
+                borderColor: widget.frontBorderColor,
+                borderWidth: widget.frontBorderWidth,
                 openProgress: effectiveFrontProgress,
                 clipper: frontGeometry.toClipper(),
                 titleOffset: labelOffset - frontGeometry.rect.topLeft,
@@ -552,10 +579,14 @@ class FolderBackPanel extends StatelessWidget {
     super.key,
     required this.colors,
     required this.edgeGlowColor,
+    this.borderColor = const Color(0xB3FFFFFF),
+    this.borderWidth = 1,
   });
 
   final List<Color> colors;
   final Color edgeGlowColor;
+  final Color borderColor;
+  final double borderWidth;
 
   @override
   Widget build(BuildContext context) {
@@ -563,6 +594,8 @@ class FolderBackPanel extends StatelessWidget {
     return CustomPaint(
       foregroundPainter: _BackPanelEdgePainter(
         glowColor: edgeGlowColor,
+        borderColor: borderColor,
+        borderWidth: borderWidth,
         clipper: clipper,
       ),
       child: ClipPath(
@@ -610,6 +643,8 @@ class FrontPocket extends StatelessWidget {
     required this.labelColor,
     required this.showLeafDecoration,
     required this.edgeGlowColor,
+    this.borderColor = const Color(0xB8FFFFFF),
+    this.borderWidth = 1,
     this.openProgress = 0,
     this.clipper = const PocketClipper(),
     this.titleOffset = const Offset(25, 116),
@@ -621,6 +656,8 @@ class FrontPocket extends StatelessWidget {
   final Color labelColor;
   final bool showLeafDecoration;
   final Color edgeGlowColor;
+  final Color borderColor;
+  final double borderWidth;
   final double openProgress;
   final PocketClipper clipper;
   final Offset titleOffset;
@@ -631,6 +668,8 @@ class FrontPocket extends StatelessWidget {
     return CustomPaint(
       foregroundPainter: PocketEdgePainter(
         glowColor: edgeGlowColor,
+        borderColor: borderColor,
+        borderWidth: borderWidth,
         clipper: clipper,
       ),
       child: ClipPath(
@@ -883,10 +922,14 @@ class PocketClipper extends CustomClipper<Path> {
 class PocketEdgePainter extends CustomPainter {
   const PocketEdgePainter({
     required this.glowColor,
+    this.borderColor = const Color(0xB8FFFFFF),
+    this.borderWidth = 1,
     this.clipper = const PocketClipper(),
   });
 
   final Color glowColor;
+  final Color borderColor;
+  final double borderWidth;
   final PocketClipper clipper;
 
   @override
@@ -900,24 +943,20 @@ class PocketEdgePainter extends CustomPainter {
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7);
     canvas.drawPath(path, outerGlow);
 
-    final edge = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1
-      ..shader = LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          glowColor.withValues(alpha: 0.72),
-          glowColor.withValues(alpha: 0.50),
-          glowColor.withValues(alpha: 0.28),
-        ],
-      ).createShader(Offset.zero & size);
-    canvas.drawPath(path, edge);
+    if (borderWidth > 0) {
+      final border = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = borderWidth
+        ..color = borderColor;
+      canvas.drawPath(path, border);
+    }
   }
 
   @override
   bool shouldRepaint(covariant PocketEdgePainter oldDelegate) {
     return oldDelegate.glowColor != glowColor ||
+        oldDelegate.borderColor != borderColor ||
+        oldDelegate.borderWidth != borderWidth ||
         clipper.shouldReclip(oldDelegate.clipper);
   }
 }
@@ -1084,9 +1123,16 @@ class _BackPanelClipper extends CustomClipper<Path> {
 }
 
 class _BackPanelEdgePainter extends CustomPainter {
-  const _BackPanelEdgePainter({required this.glowColor, required this.clipper});
+  const _BackPanelEdgePainter({
+    required this.glowColor,
+    required this.borderColor,
+    required this.borderWidth,
+    required this.clipper,
+  });
 
   final Color glowColor;
+  final Color borderColor;
+  final double borderWidth;
   final _BackPanelClipper clipper;
 
   @override
@@ -1099,16 +1145,20 @@ class _BackPanelEdgePainter extends CustomPainter {
       ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
     canvas.drawPath(path, glow);
 
-    final edge = Paint()
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1
-      ..color = glowColor.withValues(alpha: 0.70);
-    canvas.drawPath(path, edge);
+    if (borderWidth > 0) {
+      final border = Paint()
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = borderWidth
+        ..color = borderColor;
+      canvas.drawPath(path, border);
+    }
   }
 
   @override
   bool shouldRepaint(covariant _BackPanelEdgePainter oldDelegate) {
-    return oldDelegate.glowColor != glowColor;
+    return oldDelegate.glowColor != glowColor ||
+        oldDelegate.borderColor != borderColor ||
+        oldDelegate.borderWidth != borderWidth;
   }
 }
 

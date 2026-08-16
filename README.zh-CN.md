@@ -123,6 +123,10 @@ class DemoPage extends StatelessWidget {
 - `backPanelColors`：后层底板渐变色
 - `frontEdgeGlowColor`：前层封套边缘发光颜色
 - `backEdgeGlowColor`：后层底板边缘发光颜色
+- `frontBorderColor`：前层封套边框颜色，颜色的透明度可控制边框透明度
+- `frontBorderWidth`：前层封套边框粗细，设置为 `0` 可隐藏边框
+- `backBorderColor`：后层底板边框颜色，颜色的透明度可控制边框透明度
+- `backBorderWidth`：后层底板边框粗细，设置为 `0` 可隐藏边框
 - `title`：前层封套主标题
 - `subtitle`：前层封套副标题
 - `labelColor`：文字与叶子装饰颜色
@@ -145,7 +149,8 @@ class DemoPage extends StatelessWidget {
 
 ### 邮票配置
 
-向 `stamps` 传入 3 个 `StampFolderStampData`。
+向 `stamps` 传入 0～3 个 `StampFolderStampData`。替换列表并重建组件，
+即可动态添加或减少展示的图片。
 
 每个 `StampFolderStampData` 支持：
 
@@ -168,7 +173,7 @@ class DemoPage extends StatelessWidget {
 
 ## 使用说明
 
-- 当传入 `stamps` 时，组件要求必须正好提供 3 张邮票。
+- 组件支持 0～3 张图片，超过 3 张会抛出错误。
 - 如果前后层颜色少于 3 个，组件会自动补齐可用的渐变颜色组。
 - 组件包内部不再内置邮票图片，需要由接入方提供图片源。
 - 完整包使用方式可参考 [`example/lib/main.dart`](./example/lib/main.dart)。

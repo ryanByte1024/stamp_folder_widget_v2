@@ -37,13 +37,14 @@ class _FolderDemoPageState extends State<FolderDemoPage> {
   ];
 
   int _selectedPalette = 0;
+  int _selectedStampCount = 3;
 
   List<StampFolderStampData> _buildCards() {
     final defaults = StampFolderWidget.buildDefaultStamps(
       imageProvider: NetworkImage(_imageUrls[0]),
     );
     return List.generate(
-      defaults.length,
+      _selectedStampCount,
       (index) => defaults[index].copyWith(
         imageProvider: NetworkImage(_imageUrls[index]),
       ),
@@ -80,6 +81,10 @@ class _FolderDemoPageState extends State<FolderDemoPage> {
                         ),
                         frontPanelColors: palette.frontColors,
                         backPanelColors: palette.backColors,
+                        frontBorderColor: Colors.white.withValues(alpha: 0.86),
+                        frontBorderWidth: 2,
+                        backBorderColor: Colors.white.withValues(alpha: 0.68),
+                        backBorderWidth: 1.5,
                         semanticsLabel: 'Animated designs folder',
                       ),
                     ),
@@ -103,9 +108,113 @@ class _FolderDemoPageState extends State<FolderDemoPage> {
                         ],
                       ),
                     ),
+                    Positioned(
+                      top: 530,
+                      left: 105,
+                      right: 105,
+                      height: 40,
+                      child: _StampCountSelector(
+                        selectedCount: _selectedStampCount,
+                        onChanged: (count) {
+                          setState(() => _selectedStampCount = count);
+                        },
+                      ),
+                    ),
                   ],
                 ),
               ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _StampCountSelector extends StatelessWidget {
+  const _StampCountSelector({
+    required this.selectedCount,
+    required this.onChanged,
+  });
+
+  final int selectedCount;
+  final ValueChanged<int> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: const Color(0xFF1B4052).withValues(alpha: 0.44),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: Colors.white.withValues(alpha: 0.18)),
+      ),
+      child: Row(
+        children: [
+          const SizedBox(width: 14),
+          Text(
+            'Images',
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.84),
+              fontSize: 12,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const Spacer(),
+          for (final count in const [0, 1, 2, 3]) ...[
+            _StampCountButton(
+              key: ValueKey('stamp-count-$count'),
+              count: count,
+              selected: selectedCount == count,
+              onPressed: () => onChanged(count),
+            ),
+            if (count != 3) const SizedBox(width: 3),
+          ],
+          const SizedBox(width: 8),
+        ],
+      ),
+    );
+  }
+}
+
+class _StampCountButton extends StatelessWidget {
+  const _StampCountButton({
+    super.key,
+    required this.count,
+    required this.selected,
+    required this.onPressed,
+  });
+
+  final int count;
+  final bool selected;
+  final VoidCallback onPressed;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      selected: selected,
+      label: 'Show $count images',
+      child: InkWell(
+        onTap: onPressed,
+        borderRadius: BorderRadius.circular(9),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 167),
+          curve: Curves.easeOutCubic,
+          width: 30,
+          height: 30,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: selected ? Colors.white : Colors.transparent,
+            borderRadius: BorderRadius.circular(9),
+          ),
+          child: Text(
+            '$count',
+            style: TextStyle(
+              color: selected
+                  ? const Color(0xFF1B4052)
+                  : Colors.white.withValues(alpha: 0.82),
+              fontSize: 13,
+              fontWeight: FontWeight.w700,
             ),
           ),
         ),

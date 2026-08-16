@@ -1,17 +1,18 @@
-# stamp_folder_widget_example
+# stamp_folder_widget_v2 example
 
-A new Flutter project.
+This example demonstrates the `stamp_folder_widget_v2` package.
 
-## Getting Started
+The demo includes:
 
-This project is a starting point for a Flutter application.
+- Folder palette switching
+- Dynamic image count selection from 0 to 3
+- Tap-to-open and tap-to-close folder animation
 
-A few resources to get you started if this is your first Flutter project:
+Run it with:
 
-- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
-- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+```bash
+flutter run
+```
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Use the **Images** selector at the bottom of the demo to add or remove
+displayed images. The component supports up to three images.

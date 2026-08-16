@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1
+
+- Changed stamp content to support dynamic lists from 0 to 3 images; more than 3 images are rejected.
+- Added independent front-pocket and rear-panel border color and width parameters.
+- Enhanced the example with a 0-to-3 image count selector and folder border configuration.
+
 ## 0.1.0
 
 - Rebuilt the artwork on a fixed 520 x 582 reference canvas.
