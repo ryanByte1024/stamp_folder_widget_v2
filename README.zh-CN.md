@@ -164,12 +164,34 @@ class DemoPage extends StatelessWidget {
 - `tint`
 - `showBorder`
 - `fit`
+- `displayMode`
 - `borderRadius`
 - `borderWidth`
 - `borderColor`
 - `shadowColor`
 - `shadowBlurRadius`
 - `shadowOffset`
+
+`displayMode` 支持三种图片填充方式：
+
+- `StampImageDisplayMode.cover`：保持原有行为，按 `fit` 填满卡片，默认会裁剪图片。
+- `StampImageDisplayMode.contain`：完整显示图片，空余区域保持透明。
+- `StampImageDisplayMode.containWithBlur`：完整显示图片，并使用同图裁剪模糊背景填满空余区域，适合竖版图片。
+
+`buildDefaultStamps` 已使用统一约 `3:4` 的竖版卡片和
+`containWithBlur`，适合直接展示竖向矩形图片。
+
+如果图片比例固定，可以传入 `imageAspectRatio`（宽 / 高），例如：
+
+```dart
+final stamps = StampFolderWidget.buildDefaultStamps(
+  imageProvider: imageProvider,
+  imageAspectRatio: 0.72,
+);
+```
+
+传入后组件会根据卡片宽度动态计算高度，并使用 `BoxFit.cover` 填充，
+避免图片边缘出现额外的纯色或模糊填充。静默态的竖版卡片也会限制在后层文件夹范围内。
 
 ## 使用说明
 

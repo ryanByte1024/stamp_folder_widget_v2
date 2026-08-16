@@ -6,6 +6,18 @@ import 'package:flutter/material.dart';
 const Size _referenceSize = Size(520, 582);
 const double _referenceLiftFactor = 32 / 582;
 
+/// Controls how the image content is fitted inside its stamp card.
+enum StampImageDisplayMode {
+  /// Uses the configured [BoxFit], which defaults to [BoxFit.cover].
+  cover,
+
+  /// Shows the complete image and leaves the remaining space transparent.
+  contain,
+
+  /// Shows the complete image over a softly blurred, cropped version of it.
+  containWithBlur,
+}
+
 class StampFolderWidget extends StatefulWidget {
   static const int maxStampCount = 3;
 
@@ -52,34 +64,52 @@ class StampFolderWidget extends StatefulWidget {
 
   static List<StampFolderStampData> buildDefaultStamps({
     required ImageProvider imageProvider,
+    double? imageAspectRatio,
   }) {
+    if (imageAspectRatio != null && imageAspectRatio <= 0) {
+      throw ArgumentError.value(
+        imageAspectRatio,
+        'imageAspectRatio',
+        'must be greater than zero',
+      );
+    }
+    final defaultDisplayMode = imageAspectRatio == null
+        ? StampImageDisplayMode.containWithBlur
+        : StampImageDisplayMode.cover;
+
     return [
       StampFolderStampData(
         imageProvider: imageProvider,
-        leftFactor: 129 / 520,
-        topFactor: 112 / 582,
-        widthFactor: 128 / 520,
-        heightFactor: 124 / 582,
+        leftFactor: 120 / 520,
+        topFactor: 84 / 582,
+        widthFactor: 108 / 520,
+        heightFactor: 144 / 582,
         rotation: -8 * math.pi / 180,
         tint: Colors.transparent,
+        imageAspectRatio: imageAspectRatio,
+        displayMode: defaultDisplayMode,
       ),
       StampFolderStampData(
         imageProvider: imageProvider,
-        leftFactor: 188 / 520,
-        topFactor: 146 / 582,
-        widthFactor: 122 / 520,
-        heightFactor: 88 / 582,
+        leftFactor: 202 / 520,
+        topFactor: 96 / 582,
+        widthFactor: 117 / 520,
+        heightFactor: 156 / 582,
         rotation: 0,
         tint: Colors.transparent,
+        imageAspectRatio: imageAspectRatio,
+        displayMode: defaultDisplayMode,
       ),
       StampFolderStampData(
         imageProvider: imageProvider,
-        rightFactor: 142 / 520,
-        topFactor: 85 / 582,
-        widthFactor: 156 / 520,
-        heightFactor: 136 / 582,
-        rotation: 9 * math.pi / 180,
+        rightFactor: 120 / 520,
+        topFactor: 84 / 582,
+        widthFactor: 108 / 520,
+        heightFactor: 144 / 582,
+        rotation: 8 * math.pi / 180,
         tint: Colors.transparent,
+        imageAspectRatio: imageAspectRatio,
+        displayMode: defaultDisplayMode,
       ),
     ];
   }
@@ -98,10 +128,13 @@ class StampFolderWidget extends StatefulWidget {
 
   /// Color of the front pocket outline. Set its alpha to control opacity.
   final Color frontBorderColor;
+
   /// Stroke width of the front pocket outline. Set to 0 to hide it.
   final double frontBorderWidth;
+
   /// Color of the rear panel outline. Set its alpha to control opacity.
   final Color backBorderColor;
+
   /// Stroke width of the rear panel outline. Set to 0 to hide it.
   final double backBorderWidth;
 
@@ -443,14 +476,28 @@ class _StampFolderWidgetState extends State<StampFolderWidget>
     required double cardProgress,
     required double extraLift,
   }) {
-    final expanded = _StampPose.fromData(stamp).translate(0, -extraLift);
+    final basePose = _StampPose.fromData(stamp);
+    final isPortrait = basePose.size.height > basePose.size.width;
+    final expanded = basePose.translate(
+      isPortrait ? _portraitCardGroupShift : 0,
+      -extraLift,
+    );
+    final idleCardOffsets = isPortrait
+        ? _portraitIdleCardOffsets
+        : _horizontalIdleCardOffsets;
+    final engagedCardOffsets = isPortrait
+        ? _portraitEngagedCardOffsets
+        : _horizontalEngagedCardOffsets;
     final engaged = expanded
-        .translate(_engagedCardOffsets[index].dx, _engagedCardOffsets[index].dy)
+        .translate(engagedCardOffsets[index].dx, engagedCardOffsets[index].dy)
         .rotate(_engagedCardRotationOffsets[index]);
     final idle = expanded
-        .translate(_idleCardOffsets[index].dx, _idleCardOffsets[index].dy)
+        .translate(idleCardOffsets[index].dx, idleCardOffsets[index].dy)
         .rotate(_idleCardRotationOffsets[index]);
-    final lifted = _StampPose.lerp(idle, engaged, engageProgress);
+    final boundedIdle = isPortrait
+        ? _constrainPortraitIdlePose(idle, stampRotation: stamp.rotation)
+        : idle;
+    final lifted = _StampPose.lerp(boundedIdle, engaged, engageProgress);
     final pose = _StampPose.lerp(lifted, expanded, cardProgress);
 
     return Positioned(
@@ -505,6 +552,8 @@ class StampFolderStampData {
     required this.tint,
     this.showBorder = true,
     this.fit = BoxFit.cover,
+    this.displayMode = StampImageDisplayMode.cover,
+    this.imageAspectRatio,
     this.borderRadius = const BorderRadius.all(Radius.circular(14)),
     this.borderWidth = 7,
     this.borderColor = const Color(0xFFFFFCF9),
@@ -514,6 +563,10 @@ class StampFolderStampData {
   }) : assert(
          leftFactor != null || rightFactor != null,
          'Either leftFactor or rightFactor must be provided.',
+       ),
+       assert(
+         imageAspectRatio == null || imageAspectRatio > 0,
+         'imageAspectRatio must be greater than zero.',
        );
 
   final ImageProvider imageProvider;
@@ -526,6 +579,9 @@ class StampFolderStampData {
   final Color tint;
   final bool showBorder;
   final BoxFit fit;
+  final StampImageDisplayMode displayMode;
+  /// Optional image width / height ratio used to derive the card height.
+  final double? imageAspectRatio;
   final BorderRadius borderRadius;
   final double borderWidth;
   final Color borderColor;
@@ -546,6 +602,8 @@ class StampFolderStampData {
     Color? tint,
     bool? showBorder,
     BoxFit? fit,
+    StampImageDisplayMode? displayMode,
+    double? imageAspectRatio,
     BorderRadius? borderRadius,
     double? borderWidth,
     Color? borderColor,
@@ -564,6 +622,8 @@ class StampFolderStampData {
       tint: tint ?? this.tint,
       showBorder: showBorder ?? this.showBorder,
       fit: fit ?? this.fit,
+      displayMode: displayMode ?? this.displayMode,
+      imageAspectRatio: imageAspectRatio ?? this.imageAspectRatio,
       borderRadius: borderRadius ?? this.borderRadius,
       borderWidth: borderWidth ?? this.borderWidth,
       borderColor: borderColor ?? this.borderColor,
@@ -765,6 +825,12 @@ class StampCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final showBlurBackdrop =
+        data.displayMode == StampImageDisplayMode.containWithBlur;
+    final foregroundFit = data.displayMode == StampImageDisplayMode.cover
+        ? data.fit
+        : BoxFit.contain;
+
     return Transform.rotate(
       angle: data.rotation,
       alignment: Alignment.center,
@@ -791,9 +857,26 @@ class StampCard extends StatelessWidget {
             child: Stack(
               fit: StackFit.expand,
               children: [
+                if (showBlurBackdrop)
+                  ImageFiltered(
+                    imageFilter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                    child: Transform.scale(
+                      scale: 1.12,
+                      child: Image(
+                        image: data.imageProvider,
+                        fit: BoxFit.cover,
+                        filterQuality: FilterQuality.high,
+                        errorBuilder: (context, error, stackTrace) =>
+                            const SizedBox.shrink(),
+                      ),
+                    ),
+                  ),
+                if (showBlurBackdrop)
+                  const ColoredBox(color: Color(0x1A000000)),
                 Image(
                   image: data.imageProvider,
-                  fit: data.fit,
+                  fit: foregroundFit,
+                  filterQuality: FilterQuality.high,
                   errorBuilder: (context, error, stackTrace) =>
                       const _CardFallback(),
                 ),
@@ -1386,7 +1469,9 @@ class _StampPose {
 
   factory _StampPose.fromData(StampFolderStampData data) {
     final width = data.widthFactor * _referenceSize.width;
-    final height = data.heightFactor * _referenceSize.height;
+    final height = data.imageAspectRatio == null
+        ? data.heightFactor * _referenceSize.height
+        : width / data.imageAspectRatio!;
     final left = data.leftFactor != null
         ? data.leftFactor! * _referenceSize.width
         : _referenceSize.width -
@@ -1423,6 +1508,39 @@ class _StampPose {
       rotationDelta: lerpDouble(begin.rotationDelta, end.rotationDelta, t)!,
     );
   }
+}
+
+_StampPose _constrainPortraitIdlePose(
+  _StampPose pose, {
+  required double stampRotation,
+}) {
+  const inset = 2.0;
+  final bounds = _backIdle.rect.deflate(inset);
+  final angle = (pose.rotationDelta + stampRotation).abs();
+  final sinAngle = math.sin(angle).abs();
+  final cosAngle = math.cos(angle).abs();
+  final halfWidth =
+      (pose.size.width * cosAngle + pose.size.height * sinAngle) / 2;
+  final halfHeight =
+      (pose.size.width * sinAngle + pose.size.height * cosAngle) / 2;
+  final minX = bounds.left + halfWidth;
+  final maxX = bounds.right - halfWidth;
+  final minY = bounds.top + halfHeight;
+  final maxY = bounds.bottom - halfHeight;
+  final center = Offset(
+    minX <= maxX
+        ? pose.center.dx.clamp(minX, maxX).toDouble()
+        : bounds.center.dx,
+    minY <= maxY
+        ? pose.center.dy.clamp(minY, maxY).toDouble()
+        : bounds.center.dy,
+  );
+
+  return _StampPose(
+    center: center,
+    size: pose.size,
+    rotationDelta: pose.rotationDelta,
+  );
 }
 
 List<Color> _resolveColors(List<Color> colors) {
@@ -1496,7 +1614,26 @@ const _labelFoldedBase = Offset(136, 308);
 const _shadowIdle = Rect.fromLTRB(145, 400, 357, 434);
 const _shadowEngaged = Rect.fromLTRB(139, 383, 361, 422);
 
-const _idleCardOffsets = [Offset(0, 112), Offset(0, 100), Offset(-10, 110)];
-const _engagedCardOffsets = [Offset(0, 64), Offset(0, 70), Offset(0, 60)];
+const _horizontalIdleCardOffsets = [
+  Offset(0, 112),
+  Offset(0, 100),
+  Offset(-10, 110),
+];
+const _horizontalEngagedCardOffsets = [
+  Offset(0, 64),
+  Offset(0, 70),
+  Offset(0, 60),
+];
+const _portraitIdleCardOffsets = [
+  Offset(0, 112),
+  Offset(0, 124),
+  Offset(-10, 110),
+];
+const _portraitEngagedCardOffsets = [
+  Offset(0, 64),
+  Offset(0, 82),
+  Offset(0, 60),
+];
+const double _portraitCardGroupShift = -6;
 const _idleCardRotationOffsets = <double>[0.02, 0, -0.03];
 const _engagedCardRotationOffsets = <double>[0.01, 0, -0.01];

@@ -164,12 +164,36 @@ Each `StampFolderStampData` supports:
 - `tint`
 - `showBorder`
 - `fit`
+- `displayMode`
 - `borderRadius`
 - `borderWidth`
 - `borderColor`
 - `shadowColor`
 - `shadowBlurRadius`
 - `shadowOffset`
+
+`displayMode` supports three image fitting modes:
+
+- `StampImageDisplayMode.cover`: preserves the original behavior and fills the card using `fit`, cropping when necessary.
+- `StampImageDisplayMode.contain`: shows the complete image with transparent remaining space.
+- `StampImageDisplayMode.containWithBlur`: shows the complete image over a blurred, cropped version of the same image, which is suitable for portrait images.
+
+`buildDefaultStamps` now uses portrait cards at approximately `3:4` and
+`containWithBlur` for a ready-to-use vertical image layout.
+
+When the image ratio is fixed, pass `imageAspectRatio` as width / height, for
+example:
+
+```dart
+final stamps = StampFolderWidget.buildDefaultStamps(
+  imageProvider: imageProvider,
+  imageAspectRatio: 0.72,
+);
+```
+
+The card height is then derived from its width and `BoxFit.cover` is used to
+fill the card, avoiding extra solid-color or blurred edge fill. Portrait cards
+are also constrained to the rear folder bounds while idle.
 
 ## Notes
 

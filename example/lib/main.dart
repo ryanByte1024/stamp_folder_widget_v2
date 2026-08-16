@@ -30,10 +30,11 @@ class FolderDemoPage extends StatefulWidget {
 }
 
 class _FolderDemoPageState extends State<FolderDemoPage> {
+  static const _stampImageAspectRatio = 0.72;
   static const _imageUrls = [
-    'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=800&q=85',
-    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=800&q=85',
-    'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=800&q=85',
+    'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=720&h=1000&q=85',
+    'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=720&h=1000&q=85',
+    'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=720&h=1000&q=85',
   ];
 
   int _selectedPalette = 0;
@@ -42,11 +43,13 @@ class _FolderDemoPageState extends State<FolderDemoPage> {
   List<StampFolderStampData> _buildCards() {
     final defaults = StampFolderWidget.buildDefaultStamps(
       imageProvider: NetworkImage(_imageUrls[0]),
+      imageAspectRatio: _stampImageAspectRatio,
     );
     return List.generate(
       _selectedStampCount,
       (index) => defaults[index].copyWith(
         imageProvider: NetworkImage(_imageUrls[index]),
+        displayMode: StampImageDisplayMode.cover,
       ),
     );
   }

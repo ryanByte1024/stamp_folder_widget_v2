@@ -77,6 +77,43 @@ final _transparentImage = Uint8List.fromList(const <int>[
 ]);
 
 void main() {
+  test('default cards use the portrait full-image layout', () {
+    final stamps = StampFolderWidget.buildDefaultStamps(
+      imageProvider: MemoryImage(_transparentImage),
+    );
+
+    expect(stamps, hasLength(3));
+    expect(stamps[0].leftFactor, 120 / 520);
+    expect(stamps[0].topFactor, 84 / 582);
+    expect(stamps[0].widthFactor, 108 / 520);
+    expect(stamps[0].heightFactor, 144 / 582);
+    expect(stamps[1].topFactor, 96 / 582);
+    expect(stamps[1].widthFactor, 117 / 520);
+    expect(stamps[1].heightFactor, 156 / 582);
+    expect(stamps[2].topFactor, 84 / 582);
+    expect(stamps[2].widthFactor, 108 / 520);
+    expect(stamps[2].heightFactor, 144 / 582);
+    expect(stamps[2].rightFactor, 120 / 520);
+    expect(
+      stamps.every(
+        (stamp) => stamp.displayMode == StampImageDisplayMode.containWithBlur,
+      ),
+      isTrue,
+    );
+  });
+
+  test('supports a dynamic image aspect ratio', () {
+    final stamps = StampFolderWidget.buildDefaultStamps(
+      imageProvider: MemoryImage(_transparentImage),
+      imageAspectRatio: 0.72,
+    );
+
+    expect(stamps, everyElement(predicate<StampFolderStampData>((stamp) {
+      return stamp.imageAspectRatio == 0.72 &&
+          stamp.displayMode == StampImageDisplayMode.cover;
+    })));
+  });
+
   testWidgets('renders the stamp folder package widget', (
     WidgetTester tester,
   ) async {
@@ -95,6 +132,21 @@ void main() {
     expect(find.byType(StampFolderWidget), findsOneWidget);
     expect(find.text('Designs'), findsOneWidget);
     expect(find.text('Collection'), findsNothing);
+  });
+
+  testWidgets('renders a blurred backdrop for full-image cards', (
+    WidgetTester tester,
+  ) async {
+    final stamp = StampFolderWidget.buildDefaultStamps(
+      imageProvider: MemoryImage(_transparentImage),
+    ).first;
+
+    await tester.pumpWidget(
+      MaterialApp(home: StampCard(data: stamp, width: 108, height: 144)),
+    );
+
+    expect(find.byType(ImageFiltered), findsOneWidget);
+    expect(find.byType(Image), findsNWidgets(2));
   });
 
   testWidgets('opens and closes when tapped', (WidgetTester tester) async {
@@ -225,6 +277,11 @@ void main() {
     expect(changed.borderWidth, 4);
     expect(changed.shadowBlurRadius, 16);
     expect(changed.rotation, 0.2);
+
+    final fullImage = changed.copyWith(
+      displayMode: StampImageDisplayMode.containWithBlur,
+    );
+    expect(fullImage.displayMode, StampImageDisplayMode.containWithBlur);
   });
 
   testWidgets('can hide an individual stamp border', (
