@@ -580,6 +580,7 @@ class StampFolderStampData {
   final bool showBorder;
   final BoxFit fit;
   final StampImageDisplayMode displayMode;
+
   /// Optional image width / height ratio used to derive the card height.
   final double? imageAspectRatio;
   final BorderRadius borderRadius;

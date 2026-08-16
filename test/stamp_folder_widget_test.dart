@@ -108,10 +108,15 @@ void main() {
       imageAspectRatio: 0.72,
     );
 
-    expect(stamps, everyElement(predicate<StampFolderStampData>((stamp) {
-      return stamp.imageAspectRatio == 0.72 &&
-          stamp.displayMode == StampImageDisplayMode.cover;
-    })));
+    expect(
+      stamps,
+      everyElement(
+        predicate<StampFolderStampData>((stamp) {
+          return stamp.imageAspectRatio == 0.72 &&
+              stamp.displayMode == StampImageDisplayMode.cover;
+        }),
+      ),
+    );
   });
 
   testWidgets('renders the stamp folder package widget', (
