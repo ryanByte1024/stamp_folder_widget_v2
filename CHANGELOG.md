@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.2
+
+- Added independent front-pocket title and subtitle offsets that follow the pocket during its opening animation.
+- Added separate `TextStyle` configuration for the folder name and content count, including font family, size, color, weight, and spacing.
+- Updated the example to show a polished folder name and dynamic stamp count in the front pocket.
+
 ## 0.1.1
 
 - Changed stamp content to support dynamic lists from 0 to 3 images; more than 3 images are rejected.

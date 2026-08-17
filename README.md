@@ -155,6 +155,7 @@ rebuild the widget to dynamically add or remove stamp images.
 Each `StampFolderStampData` supports:
 
 - `imageProvider`
+- `imageAspectRatio`
 - `leftFactor`
 - `rightFactor`
 - `topFactor`

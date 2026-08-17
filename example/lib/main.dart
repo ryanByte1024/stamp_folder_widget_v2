@@ -36,6 +36,7 @@ class _FolderDemoPageState extends State<FolderDemoPage> {
     'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=720&h=1000&q=85',
     'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=720&h=1000&q=85',
   ];
+  static const _folderTitle = 'Summer Escape';
 
   int _selectedPalette = 0;
   int _selectedStampCount = 3;
@@ -74,6 +75,24 @@ class _FolderDemoPageState extends State<FolderDemoPage> {
                     Positioned.fill(
                       child: StampFolderWidget(
                         stamps: _buildCards(),
+                        title: _folderTitle,
+                        subtitle: '$_selectedStampCount stamps',
+                        titleOffset: const Offset(2, -3),
+                        subtitleOffset: const Offset(0, 2),
+                        titleTextStyle: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 24,
+                          height: 1,
+                          fontWeight: FontWeight.w600,
+                          letterSpacing: 0.1,
+                        ),
+                        subtitleTextStyle: const TextStyle(
+                          color: Color(0xCFFFFFFF),
+                          fontSize: 13,
+                          height: 1,
+                          fontWeight: FontWeight.w500,
+                          letterSpacing: 0.35,
+                        ),
                         showStampBorders: false,
                         animationDuration: const Duration(milliseconds: 900),
                         liftAnimationDuration: const Duration(

@@ -155,6 +155,7 @@ class DemoPage extends StatelessWidget {
 每个 `StampFolderStampData` 支持：
 
 - `imageProvider`
+- `imageAspectRatio`
 - `leftFactor`
 - `rightFactor`
 - `topFactor`

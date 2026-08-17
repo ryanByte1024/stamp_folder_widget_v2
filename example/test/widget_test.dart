@@ -6,7 +6,8 @@ void main() {
   testWidgets('renders the package example', (WidgetTester tester) async {
     await tester.pumpWidget(const ExampleApp());
 
-    expect(find.text('Designs'), findsOneWidget);
+    expect(find.text('Summer Escape'), findsOneWidget);
+    expect(find.text('3 stamps'), findsOneWidget);
     expect(find.byKey(const ValueKey('palette-0')), findsOneWidget);
     expect(find.byKey(const ValueKey('palette-1')), findsOneWidget);
     expect(find.byKey(const ValueKey('palette-2')), findsOneWidget);
@@ -19,6 +20,7 @@ void main() {
 
     await tester.tap(find.byKey(const ValueKey('stamp-count-0')));
     await tester.pump(const Duration(milliseconds: 200));
+    expect(find.text('0 stamps'), findsOneWidget);
     expect(tester.takeException(), isNull);
 
     await tester.tap(find.byKey(const ValueKey('stamp-count-3')));

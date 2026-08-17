@@ -30,6 +30,10 @@ class StampFolderWidget extends StatefulWidget {
     this.title = 'Designs',
     this.subtitle = '',
     this.labelColor = const Color(0xFFF7FFFF),
+    this.titleOffset = Offset.zero,
+    this.subtitleOffset = Offset.zero,
+    this.titleTextStyle,
+    this.subtitleTextStyle,
     this.frontPanelColors = const [
       Color(0xFF7CDBF6),
       Color(0xFF6BB8C6),
@@ -121,6 +125,23 @@ class StampFolderWidget extends StatefulWidget {
   final String title;
   final String subtitle;
   final Color labelColor;
+
+  /// Relative adjustment for the folder name inside the front pocket.
+  ///
+  /// The value is added to the animated default position, so the label keeps
+  /// following the front pocket while it opens.
+  final Offset titleOffset;
+
+  /// Relative adjustment for the content-count label below the folder name.
+  final Offset subtitleOffset;
+
+  /// Optional style merged over the default folder-name style. Use it to
+  /// configure the font family, size, color, weight, and other text details.
+  final TextStyle? titleTextStyle;
+
+  /// Optional style merged over the default content-count style.
+  final TextStyle? subtitleTextStyle;
+
   final List<Color> frontPanelColors;
   final List<Color> backPanelColors;
   final Color frontEdgeGlowColor;
@@ -460,7 +481,13 @@ class _StampFolderWidgetState extends State<StampFolderWidget>
                 borderWidth: widget.frontBorderWidth,
                 openProgress: effectiveFrontProgress,
                 clipper: frontGeometry.toClipper(),
-                titleOffset: labelOffset - frontGeometry.rect.topLeft,
+                titleOffset:
+                    labelOffset -
+                    frontGeometry.rect.topLeft +
+                    widget.titleOffset,
+                subtitleOffset: widget.subtitleOffset,
+                titleTextStyle: widget.titleTextStyle,
+                subtitleTextStyle: widget.subtitleTextStyle,
               ),
             ),
           ),
@@ -709,6 +736,9 @@ class FrontPocket extends StatelessWidget {
     this.openProgress = 0,
     this.clipper = const PocketClipper(),
     this.titleOffset = const Offset(25, 116),
+    this.subtitleOffset = Offset.zero,
+    this.titleTextStyle,
+    this.subtitleTextStyle,
   });
 
   final List<Color> colors;
@@ -722,6 +752,9 @@ class FrontPocket extends StatelessWidget {
   final double openProgress;
   final PocketClipper clipper;
   final Offset titleOffset;
+  final Offset subtitleOffset;
+  final TextStyle? titleTextStyle;
+  final TextStyle? subtitleTextStyle;
 
   @override
   Widget build(BuildContext context) {
@@ -801,6 +834,9 @@ class FrontPocket extends StatelessWidget {
                 labelColor: labelColor,
                 showLeafDecoration: showLeafDecoration,
                 titleOffset: titleOffset,
+                subtitleOffset: subtitleOffset,
+                titleTextStyle: titleTextStyle,
+                subtitleTextStyle: subtitleTextStyle,
               ),
             ],
           ),
@@ -1052,6 +1088,9 @@ class _PocketContents extends StatelessWidget {
     required this.labelColor,
     required this.showLeafDecoration,
     required this.titleOffset,
+    required this.subtitleOffset,
+    required this.titleTextStyle,
+    required this.subtitleTextStyle,
   });
 
   final String title;
@@ -1059,9 +1098,25 @@ class _PocketContents extends StatelessWidget {
   final Color labelColor;
   final bool showLeafDecoration;
   final Offset titleOffset;
+  final Offset subtitleOffset;
+  final TextStyle? titleTextStyle;
+  final TextStyle? subtitleTextStyle;
 
   @override
   Widget build(BuildContext context) {
+    final resolvedTitleStyle = TextStyle(
+      color: labelColor,
+      fontSize: 25,
+      height: 1,
+      fontWeight: FontWeight.w400,
+    ).merge(titleTextStyle);
+    final resolvedSubtitleStyle = TextStyle(
+      color: labelColor.withValues(alpha: 0.66),
+      fontSize: 14,
+      height: 1,
+      fontWeight: FontWeight.w400,
+    ).merge(subtitleTextStyle);
+
     return Stack(
       children: [
         Positioned(
@@ -1076,25 +1131,18 @@ class _PocketContents extends StatelessWidget {
                 maxLines: 1,
                 overflow: TextOverflow.visible,
                 softWrap: false,
-                style: TextStyle(
-                  color: labelColor,
-                  fontSize: 25,
-                  height: 1,
-                  fontWeight: FontWeight.w400,
-                ),
+                style: resolvedTitleStyle,
               ),
               if (subtitle.isNotEmpty) ...[
                 const SizedBox(height: 5),
-                Text(
-                  subtitle,
-                  maxLines: 1,
-                  overflow: TextOverflow.fade,
-                  softWrap: false,
-                  style: TextStyle(
-                    color: labelColor.withValues(alpha: 0.66),
-                    fontSize: 14,
-                    height: 1,
-                    fontWeight: FontWeight.w400,
+                Transform.translate(
+                  offset: subtitleOffset,
+                  child: Text(
+                    subtitle,
+                    maxLines: 1,
+                    overflow: TextOverflow.fade,
+                    softWrap: false,
+                    style: resolvedSubtitleStyle,
                   ),
                 ),
               ],
