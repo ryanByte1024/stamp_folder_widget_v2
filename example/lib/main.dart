@@ -93,6 +93,8 @@ class _FolderDemoPageState extends State<FolderDemoPage> {
                           fontWeight: FontWeight.w500,
                           letterSpacing: 0.35,
                         ),
+                        // Defaults to true; set to false for dense lists.
+                        showShadow: true,
                         showStampBorders: false,
                         animationDuration: const Duration(milliseconds: 900),
                         liftAnimationDuration: const Duration(

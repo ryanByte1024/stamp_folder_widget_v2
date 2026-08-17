@@ -131,7 +131,14 @@ class DemoPage extends StatelessWidget {
 - `subtitle`：前层封套副标题
 - `labelColor`：文字与叶子装饰颜色
 - `showLeafDecoration`：是否展示叶子装饰
+- `showShadow`：是否显示文件夹浮动阴影和邮票卡片阴影，默认是 `true`
+- `enableDecorativeEffects`：是否启用磨砂模糊、纹理噪点和边缘模糊光晕，默认是 `true`
+- `filterQuality`：变换面板和邮票图片使用的滤镜质量，默认是 `FilterQuality.high`
 - `showStampBorders`：是否全局显示图片白色边框
+
+在密集缩略图列表中，如果仍需要保留阴影，可以保持 `showShadow` 开启，
+同时设置 `enableDecorativeEffects: false` 并降低 `filterQuality`，以减少光栅绘制，
+而不改变阴影配置。
 
 ### 打开动画
 

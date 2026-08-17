@@ -131,7 +131,14 @@ class DemoPage extends StatelessWidget {
 - `subtitle`: secondary label on the front pocket
 - `labelColor`: text and leaf decoration color
 - `showLeafDecoration`: whether to show the leaf decoration
+- `showShadow`: whether to show the folder floating shadow and stamp card shadows; defaults to `true`
+- `enableDecorativeEffects`: whether to enable frosted blur, texture noise, and blurred edge glows; defaults to `true`
+- `filterQuality`: image filtering used by transformed panels and stamp images; defaults to `FilterQuality.high`
 - `showStampBorders`: globally show or hide the white image borders
+
+For dense thumbnail grids, keep `showShadow` enabled if the shadow is required,
+and set `enableDecorativeEffects: false` with a lower `filterQuality` to reduce
+raster work without changing the shadow configuration.
 
 ### Open Animation
 

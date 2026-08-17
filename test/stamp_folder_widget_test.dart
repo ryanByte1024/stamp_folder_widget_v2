@@ -154,6 +154,52 @@ void main() {
     expect(find.byType(Image), findsNWidgets(2));
   });
 
+  testWidgets('supports disabling shadows and decorative effects', (
+    WidgetTester tester,
+  ) async {
+    final stamp = StampFolderWidget.buildDefaultStamps(
+      imageProvider: MemoryImage(_transparentImage),
+    ).first;
+
+    await tester.pumpWidget(
+      MaterialApp(
+        home: StampFolderWidget(
+          stamps: [stamp],
+          showShadow: false,
+          enableDecorativeEffects: false,
+          filterQuality: FilterQuality.low,
+        ),
+      ),
+    );
+
+    final folder = tester.widget<StampFolderWidget>(
+      find.byType(StampFolderWidget),
+    );
+    final card = tester.widget<StampCard>(find.byType(StampCard));
+    final cardDecoration =
+        tester
+                .widget<DecoratedBox>(
+                  find
+                      .descendant(
+                        of: find.byType(StampCard),
+                        matching: find.byType(DecoratedBox),
+                      )
+                      .first,
+                )
+                .decoration
+            as BoxDecoration;
+
+    expect(folder.showShadow, isFalse);
+    expect(folder.enableDecorativeEffects, isFalse);
+    expect(folder.filterQuality, FilterQuality.low);
+    expect(card.showShadow, isFalse);
+    expect(card.enableDecorativeEffects, isFalse);
+    expect(card.filterQuality, FilterQuality.low);
+    expect(cardDecoration.boxShadow, isEmpty);
+    expect(find.byType(BackdropFilter), findsNothing);
+    expect(find.byType(NoiseOverlay), findsNothing);
+  });
+
   testWidgets('opens and closes when tapped', (WidgetTester tester) async {
     final states = <bool>[];
     final stamps = StampFolderWidget.buildDefaultStamps(

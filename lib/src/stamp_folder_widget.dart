@@ -52,6 +52,9 @@ class StampFolderWidget extends StatefulWidget {
     this.backBorderWidth = 1,
     this.stamps = const [],
     this.showLeafDecoration = false,
+    this.showShadow = true,
+    this.enableDecorativeEffects = true,
+    this.filterQuality = FilterQuality.high,
     this.showStampBorders = true,
     this.enableTapAnimation = true,
     this.initiallyOpen = false,
@@ -163,6 +166,18 @@ class StampFolderWidget extends StatefulWidget {
   /// add or remove images; at most [maxStampCount] images are supported.
   final List<StampFolderStampData> stamps;
   final bool showLeafDecoration;
+
+  /// Whether to render the folder's floating shadow and stamp card shadows.
+  ///
+  /// The default keeps the original artwork unchanged.
+  final bool showShadow;
+
+  /// Controls the expensive frosted-glass and texture effects. Disable this
+  /// for dense thumbnail grids while keeping the shadow appearance intact.
+  final bool enableDecorativeEffects;
+
+  /// Filtering used by transformed panels and stamp images.
+  final FilterQuality filterQuality;
   final bool showStampBorders;
   final bool enableTapAnimation;
   final bool initiallyOpen;
@@ -444,10 +459,11 @@ class _StampFolderWidgetState extends State<StampFolderWidget>
       child: Stack(
         clipBehavior: Clip.none,
         children: [
-          Positioned.fromRect(
-            rect: shadowGeometry,
-            child: _FolderFloatingShadow(progress: engageProgress),
-          ),
+          if (widget.showShadow)
+            Positioned.fromRect(
+              rect: shadowGeometry,
+              child: _FolderFloatingShadow(progress: engageProgress),
+            ),
           Positioned.fromRect(
             rect: backGeometry.rect,
             child: FolderBackPanel(
@@ -455,6 +471,7 @@ class _StampFolderWidgetState extends State<StampFolderWidget>
               edgeGlowColor: backGlow,
               borderColor: widget.backBorderColor,
               borderWidth: widget.backBorderWidth,
+              enableDecorativeEffects: widget.enableDecorativeEffects,
             ),
           ),
           for (final index in const [2, 0, 1])
@@ -470,6 +487,7 @@ class _StampFolderWidgetState extends State<StampFolderWidget>
             rect: frontGeometry.rect,
             child: _PerspectiveFrontPocket(
               progress: effectiveFrontProgress,
+              filterQuality: widget.filterQuality,
               child: FrontPocket(
                 colors: frontColors,
                 title: widget.title,
@@ -479,6 +497,7 @@ class _StampFolderWidgetState extends State<StampFolderWidget>
                 edgeGlowColor: frontGlow,
                 borderColor: widget.frontBorderColor,
                 borderWidth: widget.frontBorderWidth,
+                enableDecorativeEffects: widget.enableDecorativeEffects,
                 openProgress: effectiveFrontProgress,
                 clipper: frontGeometry.toClipper(),
                 titleOffset:
@@ -535,11 +554,16 @@ class _StampFolderWidgetState extends State<StampFolderWidget>
       child: Transform.rotate(
         angle: pose.rotationDelta,
         alignment: Alignment.center,
-        child: StampCard(
-          data: stamp,
-          showBorder: widget.showStampBorders,
-          width: pose.size.width,
-          height: pose.size.height,
+        child: RepaintBoundary(
+          child: StampCard(
+            data: stamp,
+            showBorder: widget.showStampBorders,
+            width: pose.size.width,
+            height: pose.size.height,
+            showShadow: widget.showShadow,
+            enableDecorativeEffects: widget.enableDecorativeEffects,
+            filterQuality: widget.filterQuality,
+          ),
         ),
       ),
     );
@@ -547,9 +571,14 @@ class _StampFolderWidgetState extends State<StampFolderWidget>
 }
 
 class _PerspectiveFrontPocket extends StatelessWidget {
-  const _PerspectiveFrontPocket({required this.progress, required this.child});
+  const _PerspectiveFrontPocket({
+    required this.progress,
+    required this.filterQuality,
+    required this.child,
+  });
 
   final double progress;
+  final FilterQuality filterQuality;
   final Widget child;
 
   @override
@@ -561,7 +590,7 @@ class _PerspectiveFrontPocket extends StatelessWidget {
       transform: Matrix4.identity()
         ..setEntry(3, 2, 0.0009)
         ..rotateX(0.57 * progress),
-      filterQuality: FilterQuality.high,
+      filterQuality: filterQuality,
       child: child,
     );
   }
@@ -669,12 +698,14 @@ class FolderBackPanel extends StatelessWidget {
     required this.edgeGlowColor,
     this.borderColor = const Color(0xB3FFFFFF),
     this.borderWidth = 1,
+    this.enableDecorativeEffects = true,
   });
 
   final List<Color> colors;
   final Color edgeGlowColor;
   final Color borderColor;
   final double borderWidth;
+  final bool enableDecorativeEffects;
 
   @override
   Widget build(BuildContext context) {
@@ -685,6 +716,7 @@ class FolderBackPanel extends StatelessWidget {
         borderColor: borderColor,
         borderWidth: borderWidth,
         clipper: clipper,
+        enableBlur: enableDecorativeEffects,
       ),
       child: ClipPath(
         clipper: clipper,
@@ -714,7 +746,7 @@ class FolderBackPanel extends StatelessWidget {
                 ),
               ),
             ),
-            const NoiseOverlay(opacity: 0.012),
+            if (enableDecorativeEffects) const NoiseOverlay(opacity: 0.012),
           ],
         ),
       ),
@@ -733,6 +765,7 @@ class FrontPocket extends StatelessWidget {
     required this.edgeGlowColor,
     this.borderColor = const Color(0xB8FFFFFF),
     this.borderWidth = 1,
+    this.enableDecorativeEffects = true,
     this.openProgress = 0,
     this.clipper = const PocketClipper(),
     this.titleOffset = const Offset(25, 116),
@@ -749,6 +782,7 @@ class FrontPocket extends StatelessWidget {
   final Color edgeGlowColor;
   final Color borderColor;
   final double borderWidth;
+  final bool enableDecorativeEffects;
   final double openProgress;
   final PocketClipper clipper;
   final Offset titleOffset;
@@ -759,88 +793,91 @@ class FrontPocket extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final resolvedColors = _resolveColors(colors);
+    final Widget content = Stack(
+      fit: StackFit.expand,
+      children: [
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                resolvedColors[0].withValues(alpha: 0.84),
+                resolvedColors[1].withValues(alpha: 0.82),
+                resolvedColors[2].withValues(alpha: 0.86),
+              ],
+            ),
+          ),
+        ),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.white.withValues(alpha: 0.24),
+                Colors.white.withValues(alpha: 0.07),
+                Colors.white.withValues(alpha: 0.14),
+              ],
+              stops: const [0, 0.44, 1],
+            ),
+          ),
+        ),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: RadialGradient(
+              center: const Alignment(0.40, -0.08),
+              radius: 0.85,
+              colors: [
+                const Color(0xFF7EDC83).withValues(alpha: 0.14),
+                Colors.transparent,
+              ],
+            ),
+          ),
+        ),
+        DecoratedBox(
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+              colors: [
+                Colors.white.withValues(alpha: 0.15),
+                Colors.transparent,
+                Colors.black.withValues(alpha: 0.025 + openProgress * 0.015),
+              ],
+            ),
+          ),
+        ),
+        if (enableDecorativeEffects) const NoiseOverlay(opacity: 0.018),
+        _PocketContents(
+          title: title,
+          subtitle: subtitle,
+          labelColor: labelColor,
+          showLeafDecoration: showLeafDecoration,
+          titleOffset: titleOffset,
+          subtitleOffset: subtitleOffset,
+          titleTextStyle: titleTextStyle,
+          subtitleTextStyle: subtitleTextStyle,
+        ),
+      ],
+    );
+
     return CustomPaint(
       foregroundPainter: PocketEdgePainter(
         glowColor: edgeGlowColor,
         borderColor: borderColor,
         borderWidth: borderWidth,
         clipper: clipper,
+        enableBlur: enableDecorativeEffects,
       ),
       child: ClipPath(
         clipper: clipper,
-        child: BackdropFilter(
-          filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
-          child: Stack(
-            fit: StackFit.expand,
-            children: [
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      resolvedColors[0].withValues(alpha: 0.84),
-                      resolvedColors[1].withValues(alpha: 0.82),
-                      resolvedColors[2].withValues(alpha: 0.86),
-                    ],
-                  ),
-                ),
-              ),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topCenter,
-                    end: Alignment.bottomCenter,
-                    colors: [
-                      Colors.white.withValues(alpha: 0.24),
-                      Colors.white.withValues(alpha: 0.07),
-                      Colors.white.withValues(alpha: 0.14),
-                    ],
-                    stops: const [0, 0.44, 1],
-                  ),
-                ),
-              ),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: RadialGradient(
-                    center: const Alignment(0.40, -0.08),
-                    radius: 0.85,
-                    colors: [
-                      const Color(0xFF7EDC83).withValues(alpha: 0.14),
-                      Colors.transparent,
-                    ],
-                  ),
-                ),
-              ),
-              DecoratedBox(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                    colors: [
-                      Colors.white.withValues(alpha: 0.15),
-                      Colors.transparent,
-                      Colors.black.withValues(
-                        alpha: 0.025 + openProgress * 0.015,
-                      ),
-                    ],
-                  ),
-                ),
-              ),
-              const NoiseOverlay(opacity: 0.018),
-              _PocketContents(
-                title: title,
-                subtitle: subtitle,
-                labelColor: labelColor,
-                showLeafDecoration: showLeafDecoration,
-                titleOffset: titleOffset,
-                subtitleOffset: subtitleOffset,
-                titleTextStyle: titleTextStyle,
-                subtitleTextStyle: subtitleTextStyle,
-              ),
-            ],
-          ),
-        ),
+        child: enableDecorativeEffects
+            ? BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 22, sigmaY: 22),
+                child: content,
+              )
+            : content,
       ),
     );
   }
@@ -853,16 +890,23 @@ class StampCard extends StatelessWidget {
     this.showBorder = true,
     required this.width,
     required this.height,
+    this.showShadow = true,
+    this.enableDecorativeEffects = true,
+    this.filterQuality = FilterQuality.high,
   });
 
   final StampFolderStampData data;
   final bool showBorder;
   final double width;
   final double height;
+  final bool showShadow;
+  final bool enableDecorativeEffects;
+  final FilterQuality filterQuality;
 
   @override
   Widget build(BuildContext context) {
     final showBlurBackdrop =
+        enableDecorativeEffects &&
         data.displayMode == StampImageDisplayMode.containWithBlur;
     final foregroundFit = data.displayMode == StampImageDisplayMode.cover
         ? data.fit
@@ -877,13 +921,15 @@ class StampCard extends StatelessWidget {
               ? data.borderColor
               : Colors.transparent,
           borderRadius: data.borderRadius,
-          boxShadow: [
-            BoxShadow(
-              color: data.shadowColor,
-              blurRadius: data.shadowBlurRadius,
-              offset: data.shadowOffset,
-            ),
-          ],
+          boxShadow: showShadow
+              ? <BoxShadow>[
+                  BoxShadow(
+                    color: data.shadowColor,
+                    blurRadius: data.shadowBlurRadius,
+                    offset: data.shadowOffset,
+                  ),
+                ]
+              : const <BoxShadow>[],
         ),
         child: Padding(
           padding: showBorder && data.showBorder
@@ -902,7 +948,7 @@ class StampCard extends StatelessWidget {
                       child: Image(
                         image: data.imageProvider,
                         fit: BoxFit.cover,
-                        filterQuality: FilterQuality.high,
+                        filterQuality: filterQuality,
                         errorBuilder: (context, error, stackTrace) =>
                             const SizedBox.shrink(),
                       ),
@@ -913,7 +959,7 @@ class StampCard extends StatelessWidget {
                 Image(
                   image: data.imageProvider,
                   fit: foregroundFit,
-                  filterQuality: FilterQuality.high,
+                  filterQuality: filterQuality,
                   errorBuilder: (context, error, stackTrace) =>
                       const _CardFallback(),
                 ),
@@ -1045,12 +1091,14 @@ class PocketEdgePainter extends CustomPainter {
     this.borderColor = const Color(0xB8FFFFFF),
     this.borderWidth = 1,
     this.clipper = const PocketClipper(),
+    this.enableBlur = true,
   });
 
   final Color glowColor;
   final Color borderColor;
   final double borderWidth;
   final PocketClipper clipper;
+  final bool enableBlur;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1059,8 +1107,10 @@ class PocketEdgePainter extends CustomPainter {
     final outerGlow = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2.4
-      ..color = glowColor.withValues(alpha: 0.16)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 7);
+      ..color = glowColor.withValues(alpha: enableBlur ? 0.16 : 0.10);
+    if (enableBlur) {
+      outerGlow.maskFilter = const MaskFilter.blur(BlurStyle.normal, 7);
+    }
     canvas.drawPath(path, outerGlow);
 
     if (borderWidth > 0) {
@@ -1077,6 +1127,7 @@ class PocketEdgePainter extends CustomPainter {
     return oldDelegate.glowColor != glowColor ||
         oldDelegate.borderColor != borderColor ||
         oldDelegate.borderWidth != borderWidth ||
+        oldDelegate.enableBlur != enableBlur ||
         clipper.shouldReclip(oldDelegate.clipper);
   }
 }
@@ -1260,12 +1311,14 @@ class _BackPanelEdgePainter extends CustomPainter {
     required this.borderColor,
     required this.borderWidth,
     required this.clipper,
+    this.enableBlur = true,
   });
 
   final Color glowColor;
   final Color borderColor;
   final double borderWidth;
   final _BackPanelClipper clipper;
+  final bool enableBlur;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -1273,8 +1326,10 @@ class _BackPanelEdgePainter extends CustomPainter {
     final glow = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 2
-      ..color = glowColor.withValues(alpha: 0.15)
-      ..maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+      ..color = glowColor.withValues(alpha: enableBlur ? 0.15 : 0.10);
+    if (enableBlur) {
+      glow.maskFilter = const MaskFilter.blur(BlurStyle.normal, 6);
+    }
     canvas.drawPath(path, glow);
 
     if (borderWidth > 0) {
@@ -1290,7 +1345,8 @@ class _BackPanelEdgePainter extends CustomPainter {
   bool shouldRepaint(covariant _BackPanelEdgePainter oldDelegate) {
     return oldDelegate.glowColor != glowColor ||
         oldDelegate.borderColor != borderColor ||
-        oldDelegate.borderWidth != borderWidth;
+        oldDelegate.borderWidth != borderWidth ||
+        oldDelegate.enableBlur != enableBlur;
   }
 }
 
@@ -1393,7 +1449,9 @@ class NoisePainter extends CustomPainter {
   void paint(Canvas canvas, Size size) {
     final paint = Paint()..style = PaintingStyle.fill;
     final random = math.Random(7);
-    const step = 5.0;
+    // The texture is intentionally subtle; larger cells preserve the look
+    // while avoiding thousands of tiny draw calls for every folder.
+    const step = 12.0;
 
     for (double y = 0; y < size.height; y += step) {
       for (double x = 0; x < size.width; x += step) {

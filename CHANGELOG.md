@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.3
+
+- Added the `showShadow` switch for the folder floating shadow and stamp card shadows; it defaults to `true` to preserve the existing appearance.
+- Added `enableDecorativeEffects` and `filterQuality` options to reduce raster work in dense thumbnail layouts without changing the default visual style.
+- Added per-stamp repaint boundaries and reduced decorative texture draw calls to improve scrolling performance.
+
+
 ## 0.1.2
 
 - Added independent front-pocket title and subtitle offsets that follow the pocket during its opening animation.
